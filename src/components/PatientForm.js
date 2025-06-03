@@ -20,77 +20,68 @@ export default function PatientForm({ onGenerateReport, onEmailChange, onPatient
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition && !recognitionRef.current) {
             recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = true;
-            recognitionRef.current.interimResults = false;
+            recognitionRef.current.continuous = false;  // VAŽNO: isključeno kontinuirano prepoznavanje
+            recognitionRef.current.interimResults = false; // samo finalni rezultati
             recognitionRef.current.lang = 'sr-RS';
+
+            recognitionRef.current.onresult = (event) => {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    }
+                }
+                if (finalTranscript) {
+                    finalTranscript = formatSpeechText(finalTranscript);
+                    setOpis(prevOpis => prevOpis ? prevOpis + ' ' + finalTranscript : finalTranscript);
+                }
+            };
+
+            recognitionRef.current.onerror = (event) => {
+                console.error('Greška u prepoznavanju govora:', event.error);
+                setListening(false);
+                recognitionRef.current.stop();
+            };
+
+            recognitionRef.current.onend = () => {
+                setListening(false);
+            };
         } else if (!SpeechRecognition) {
             console.warn('Ovaj pretraživač ne podržava prepoznavanje govora.');
         }
     }, []);
 
-const toggleListening = () => {
-    const recognition = recognitionRef.current;
+    // Funkcija za formatiranje prepoznatog teksta
+    const formatSpeechText = (text) => {
+        return text
+            .replace(/\btačka\b/gi, '.')
+            .replace(/\bzarez\b/gi, ',')
+            .replace(/\buzvičnik\b/gi, '!')
+            .replace(/\bznak pitanja\b/gi, '?')
+            .replace(/\s+/g, ' ')
+            .replace(/\s([,.!?])/g, '$1')
+            .trim()
+            .split(/(?<=[.?!])\s+/)
+            .map(sentence => sentence.charAt(0).toUpperCase() + sentence.slice(1))
+            .join(' ');
+    };
 
-    if (!recognition) {
-        alert('Vaš pretraživač ne podržava prepoznavanje govora.');
-        return;
-    }
+    const toggleListening = () => {
+        const recognition = recognitionRef.current;
 
-    if (listening) {
-        recognition.stop();
-        setListening(false);
-    } else {
-        recognition.start();
-        setListening(true);
+        if (!recognition) {
+            alert('Vaš pretraživač ne podržava prepoznavanje govora.');
+            return;
+        }
 
-        recognition.onresult = (event) => {
-            let finalTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
-                }
-            }
-
-            if (finalTranscript) {
-                // 1. Zamena izgovorenih interpunkcija
-                finalTranscript = finalTranscript
-                    .replace(/\btačka\b/gi, '.')
-                    .replace(/\bzarez\b/gi, ',')
-                    .replace(/\buzvičnik\b/gi, '!')
-                    .replace(/\bznak pitanja\b/gi, '?');
-
-                // 2. Uklanjanje viška razmaka
-                finalTranscript = finalTranscript
-                    .replace(/\s+/g, ' ')
-                    .replace(/\s([,.!?])/g, '$1')
-                    .trim();
-
-                // 3. Veliko slovo na početku rečenica
-                finalTranscript = finalTranscript
-                    .split(/(?<=[.?!])\s+/)
-                    .map(sentence => sentence.charAt(0).toUpperCase() + sentence.slice(1))
-                    .join(' ');
-
-                // 4. Dodavanje u postojeći opis
-                setOpis(prevOpis => {
-                    const separator = prevOpis ? ' ' : '';
-                    return prevOpis + separator + finalTranscript;
-                });
-            }
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Greška u prepoznavanju govora:', event.error);
-            setListening(false);
+        if (listening) {
             recognition.stop();
-        };
-
-        recognition.onend = () => {
             setListening(false);
-        };
-    }
-};
-
+        } else {
+            recognition.start();
+            setListening(true);
+        }
+    };
 
     const formatDatumKontrole = (dateObj) => {
         if (!dateObj || !(dateObj instanceof Date)) return '';
@@ -117,7 +108,6 @@ const toggleListening = () => {
             email,
             opis
         };
-  
     };
 
     return (
@@ -174,8 +164,6 @@ const toggleListening = () => {
                         className="datepicker-input"
                         style={{ width: '100%', backgroundColor: 'white' }}
                     />
-
-
                 </div>
                 <div className="form-group">
                     <label>Kontrola kod stomatologa</label>
@@ -190,8 +178,6 @@ const toggleListening = () => {
                         className="datepicker-input"
                         style={{ width: '100%', backgroundColor: 'white' }}
                     />
-
-
                 </div>
             </div>
 
