@@ -1,21 +1,24 @@
 import React, { useCallback, useState } from 'react';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
-import axios from 'axios';
+import { sendReport } from '../api';
 
 pdfMake.vfs = pdfFonts.vfs;
 
 const ReportDisplay = React.memo(({ report, email, patientData }) => {
-    console.log(patientData, 'patientdata');
+    console.log(email, 'email');
 
     const [loading, setLoading] = useState(false);
 
-    const generateAndSendPdf = useCallback(async () => {
+    const generateAndSendPdf = useCallback(() => {
         if (!email || !email.includes('@')) {
             alert('Email adresa nije validna.');
+            console.log('ima li te ovde');
+
             return;
         }
 
+        // Čišćenje izveštaja uklanjanjem nepotrebnih delova
         const cleanedReport = report
             .replace(/Potpis lekara:.*(\r?\n)?/gi, '')
             .replace(/Potpis:.*(\r?\n)?/gi, '')
@@ -27,29 +30,24 @@ const ReportDisplay = React.memo(({ report, email, patientData }) => {
             .replace(/Medicinski izveštaj:.*(\r?\n)?/gi, '')
             .replace(/Izveštaj:.*(\r?\n)?/gi, '')
             .replace(/Stomatološki:.*(\r?\n)?/gi, '')
-
+            .replace(/Izveštaj o stomatološkom pregledu:.*(\r?\n)?/gi, '')
             .replace(/S poštovanjem,?(\r?\n)?/gi, '')
             .replace(/(Srdačan|Srdačno)?\s*Pozdrav,?(\r?\n)?/gi, '')
             .replace(/Lep pozdrav,?(\r?\n)?/gi, '')
             .replace(/Hvala na poverenju\.?(\r?\n)?/gi, '')
-
             .replace(/Datum pregleda:.*(\r?\n)?/gi, '')
             .replace(/Datum:.*(\r?\n)?/gi, '')
             .replace(/Vreme:.*(\r?\n)?/gi, '')
             .replace(/Datu[mn]\s+generisan[oa]:?.*(\r?\n)?/gi, '')
             .replace(/Napomena:.*(\r?\n)?/gi, '')
-
             .replace(/Web:.*(\r?\n)?/gi, '')
-
             .replace(/Ovaj izveštaj je generisan.*(\r?\n)?/gi, '')
             .replace(/Generisano pomoću.*(\r?\n)?/gi, '')
             .replace(/AI model.*(\r?\n)?/gi, '')
-
             .replace(/\n{2,}/g, '\n')
             .trim();
 
-
-
+        // Definisanje PDF dokumenta
         const docDefinition = {
             content: [
                 { text: 'Dental Medic', style: 'header', alignment: 'center' },
@@ -68,17 +66,14 @@ const ReportDisplay = React.memo(({ report, email, patientData }) => {
                         ],
                     },
                     layout: 'noBorders',
-                    margin: [0, 50, 0, 10]
+                    margin: [0, 50, 0, 10],
                 },
-
                 { text: cleanedReport, style: 'content', margin: [0, 10, 0, 10] },
-
                 {
                     text: `Datum generisanja: ${new Date().toLocaleDateString()}`,
                     style: 'footer',
                     absolutePosition: { x: 40, y: 780 },
                 },
-
                 {
                     text: 'Lekar specijalista: DR. Jelena Maksimović',
                     style: 'footer',
@@ -97,11 +92,6 @@ const ReportDisplay = React.memo(({ report, email, patientData }) => {
                     bold: true,
                     alignment: 'center',
                     margin: [0, 0, 0, 5],
-                },
-                subheader: {
-                    fontSize: 14,
-                    alignment: 'center',
-                    margin: [0, 50, 0, 10] 
                 },
                 content: {
                     fontSize: 12,
@@ -123,18 +113,7 @@ const ReportDisplay = React.memo(({ report, email, patientData }) => {
 
         pdfMake.createPdf(docDefinition).getBlob(async (blob) => {
             try {
-                const formData = new FormData();
-                formData.append('pdf', blob, 'izvestaj.pdf');
-                formData.append('email', email);
-
-                for (let [key, value] of formData.entries()) {
-                    console.log(`${key}:`, value);
-                }
-
-                await axios.post('http://localhost:3001/api/send-report', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-
+                await sendReport(email, blob);
                 alert('Izveštaj je uspešno poslat na mejl!');
             } catch (error) {
                 console.error('Greška pri slanju mejla:', error);
@@ -143,7 +122,7 @@ const ReportDisplay = React.memo(({ report, email, patientData }) => {
                 setLoading(false);
             }
         });
-    }, [report, email]);
+    }, [report, email, patientData]);
 
     return (
         <div style={{ marginTop: 20 }}>
