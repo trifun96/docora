@@ -1,23 +1,21 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import PatientForm from './components/PatientForm';
+import ReportDisplay from './components/ReportDisplay';
 
 function App() {
+  const [report, setReport] = useState('');
+  const [email, setEmail] = useState('');
+  const [patientData, setPatientData] = useState('');
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ maxWidth: 600, margin: 'auto', padding: 20, fontFamily: 'Arial, sans-serif' }}>
+      <h3 style={{ textAlign: 'center', fontSize:'18px', fontWeight:'200' }}>Docora - NextGen izveštaj za stomatologe</h3>
+      <PatientForm
+        onGenerateReport={setReport}
+        onEmailChange={setEmail}
+        onPatientDataFilled={setPatientData}
+      />
+      {report && <ReportDisplay report={report} email={email} patientData={patientData} />}
     </div>
   );
 }
