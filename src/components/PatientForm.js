@@ -16,55 +16,65 @@ export default function PatientForm({ onGenerateReport, onEmailChange, onPatient
 
     const recognitionRef = useRef(null);
 
-    useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition && !recognitionRef.current) {
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;  // VAŽNO: isključeno kontinuirano prepoznavanje
-            recognitionRef.current.interimResults = false; // samo finalni rezultati
-            recognitionRef.current.lang = 'sr-RS';
+useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition && !recognitionRef.current) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'sr-RS';
 
-            recognitionRef.current.onresult = (event) => {
-                let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    }
+        recognitionRef.current.onresult = (event) => {
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
                 }
-                if (finalTranscript) {
-                    finalTranscript = formatSpeechText(finalTranscript);
-                    setOpis(prevOpis => prevOpis ? prevOpis + ' ' + finalTranscript : finalTranscript);
+            }
+            if (finalTranscript) {
+                finalTranscript = formatSpeechText(finalTranscript);
+                setOpis(prevOpis => prevOpis ? prevOpis + ' ' + finalTranscript : finalTranscript);
+            }
+        };
+
+        recognitionRef.current.onerror = (event) => {
+            console.error('Greška u prepoznavanju govora:', event.error);
+            setListening(false);
+            recognitionRef.current.stop();
+        };
+
+        recognitionRef.current.onend = () => {
+            setListening(false);
+
+            setOpis(prevOpis => {
+                if (!prevOpis) return prevOpis;
+                if (!/[.?!]$/.test(prevOpis.trim())) {
+                    return prevOpis.trim() + '.';
                 }
-            };
-
-            recognitionRef.current.onerror = (event) => {
-                console.error('Greška u prepoznavanju govora:', event.error);
-                setListening(false);
-                recognitionRef.current.stop();
-            };
-
-            recognitionRef.current.onend = () => {
-                setListening(false);
-            };
-        } else if (!SpeechRecognition) {
-            console.warn('Ovaj pretraživač ne podržava prepoznavanje govora.');
-        }
-    }, []);
+                return prevOpis;
+            });
+        };
+    } else if (!SpeechRecognition) {
+        console.warn('Ovaj pretraživač ne podržava prepoznavanje govora.');
+    }
+}, []);
 
     // Funkcija za formatiranje prepoznatog teksta
-    const formatSpeechText = (text) => {
-        return text
-            .replace(/\btačka\b/gi, '.')
-            .replace(/\bzarez\b/gi, ',')
-            .replace(/\buzvičnik\b/gi, '!')
-            .replace(/\bznak pitanja\b/gi, '?')
-            .replace(/\s+/g, ' ')
-            .replace(/\s([,.!?])/g, '$1')
-            .trim()
-            .split(/(?<=[.?!])\s+/)
-            .map(sentence => sentence.charAt(0).toUpperCase() + sentence.slice(1))
-            .join(' ');
-    };
+   const formatSpeechText = (text) => {
+    let formatted = text
+        .replace(/\btačka\b/gi, '.')
+        .replace(/\bzarez\b/gi, ',')
+        .replace(/\buzvičnik\b/gi, '!')
+        .replace(/\bznak pitanja\b/gi, '?')
+        .replace(/\s+/g, ' ')
+        .replace(/\s([,.!?])/g, '$1')
+        .trim()
+        .split(/(?<=[.?!])\s+/)
+        .map(sentence => sentence.charAt(0).toUpperCase() + sentence.slice(1))
+        .join(' ');
+
+    return formatted;
+};
 
     const toggleListening = () => {
         const recognition = recognitionRef.current;
