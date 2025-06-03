@@ -53,10 +53,24 @@ textarea {
 }
 
 .datepicker-input {
-  width: 100%;
-  padding: 8px;
-  font-size: 16px;
+  flex: 1;
 }
+
+.datepicker-input .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.datepicker-input input {
+  width: 100%;
+  height: 42px; /* Matchuj visinu inputa */
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+
 
 button {
   padding: 0.75rem 1.25rem;
@@ -85,4 +99,16 @@ button[type="button"] {
 
 button[type="button"]:hover:not(:disabled) {
   background-color: #1e7e34;
+}
+
+@media (max-width: 800px) {
+  .form-row {
+    /* Prebaci ceo red u kolonu da bi svi itemi bili jedan ispod drugog */
+    flex-direction: column;
+  }
+
+  .form-row .datepicker-input {
+    flex: none;       /* da ne raste */
+    width: 100%;      /* zauzmi punu širinu */
+  }
 }

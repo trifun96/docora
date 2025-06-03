@@ -3,6 +3,11 @@ import '../components/PatientFrom.css';
 import DatePicker from 'react-datepicker';
 import { generateReport } from '../api';
 import 'react-datepicker/dist/react-datepicker.css';
+import {
+    Button, Grid
+} from '@mui/material';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 
 export default function PatientForm({ onGenerateReport, onEmailChange, onPatientDataFilled }) {
     const [ime, setIme] = useState('');
@@ -215,28 +220,30 @@ ${opis}
             </div>
 
             <div className="form-row">
-                <label>Datum rođenja</label>
-                <DatePicker
-                    selected={datumRodjenja}
-                    onChange={(date) => setDatumRodjenja(date)}
-                    placeholderText="Izaberi datum"
-                    dateFormat="dd/MM/yyyy"
-                    showYearDropdown
-                    scrollableYearDropdown
-                    yearDropdownItemNumber={100}
-                    className="datepicker-input"
-                />
-                <label>Kontrola kod stomatologa</label>
-                <DatePicker
-                    selected={kontrola}
-                    onChange={(date) => setDatumKontrola(date)}
-                    placeholderText="Izaberi datum"
-                    dateFormat="dd/MM/yyyy"
-                    showYearDropdown
-                    scrollableYearDropdown
-                    yearDropdownItemNumber={100}
-                    className="datepicker-input"
-                />
+                <div className="form-group">
+                    <DatePicker
+                        selected={datumRodjenja}
+                        onChange={(date) => setDatumRodjenja(date)}
+                        placeholderText="Datum rođenja"
+                        dateFormat="dd/MM/yyyy"
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={100}
+                        className="datepicker-input"
+                    />
+                </div>
+                <div className="form-group">
+                    <DatePicker
+                        selected={kontrola}
+                        onChange={(date) => setDatumKontrola(date)}
+                        placeholderText="Kontrola"
+                        dateFormat="dd/MM/yyyy"
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={100}
+                        className="datepicker-input"
+                    />
+                </div>
             </div>
 
             <div className="form-row">
@@ -250,12 +257,32 @@ ${opis}
             </div>
 
             <div className="form-row button-row">
-                <button type="button" onClick={toggleListening} className={listening ? 'listening' : ''}>
-                    {listening ? 'Zaustavi snimanje' : 'Govori'}
-                </button>
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Generišem...' : 'Generiši izveštaj'}
-                </button>
+                <Grid item xs={12} sm={6}>
+                    <Button
+                        variant="outlined"
+                        color="info"
+                        style={{
+                            backgroundColor: 'white',
+                            color: 'blue'
+                        }}
+                        startIcon={listening ? <MicOffIcon /> : <MicIcon />}
+                        onClick={toggleListening}
+                        fullWidth
+                    >
+                        {listening ? 'Zaustavi snimanje' : 'Govori'}
+                    </Button>
+                </Grid>
+                <Grid item xs={12} sm={6} >
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        type="submit"
+                        disabled={loading}
+                        fullWidth
+                    >
+                        {loading ? 'Generišem...' : 'Generiši izveštaj'}
+                    </Button>
+                </Grid>
             </div>
         </form>
     );
