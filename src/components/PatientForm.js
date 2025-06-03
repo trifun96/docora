@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../components/PatientFrom.css';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 export default function PatientForm({ onGenerateReport, onEmailChange, onPatientDataFilled }) {
     const [ime, setIme] = useState('');
@@ -12,85 +13,53 @@ export default function PatientForm({ onGenerateReport, onEmailChange, onPatient
     const [email, setEmail] = useState('');
     const [opis, setOpis] = useState('');
     const [loading, setLoading] = useState(false);
-    const [listening, setListening] = useState(false);
 
-    const recognitionRef = useRef(null);
+    const {
+        transcript,
+        listening,
+        resetTranscript,
+        browserSupportsSpeechRecognition
+    } = useSpeechRecognition();
 
     useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition && !recognitionRef.current) {
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = true;
-            recognitionRef.current.interimResults = false;
-            recognitionRef.current.lang = 'sr-RS';
-        } else if (!SpeechRecognition) {
-            console.warn('Ovaj pretraživač ne podržava prepoznavanje govora.');
+        if (!browserSupportsSpeechRecognition) {
+            alert('Vaš pretraživač ne podržava prepoznavanje govora.');
         }
-    }, []);
+    }, [browserSupportsSpeechRecognition]);
 
-const toggleListening = () => {
-    const recognition = recognitionRef.current;
+    useEffect(() => {
+        if (transcript) {
+            let finalTranscript = transcript
+                .replace(/\btačka\b/gi, '.')
+                .replace(/\bzarez\b/gi, ',')
+                .replace(/\buzvičnik\b/gi, '!')
+                .replace(/\bznak pitanja\b/gi, '?')
+                .replace(/\s+/g, ' ')
+                .replace(/\s([,.!?])/g, '$1')
+                .trim();
 
-    if (!recognition) {
-        alert('Vaš pretraživač ne podržava prepoznavanje govora.');
-        return;
-    }
+            finalTranscript = finalTranscript
+                .split(/(?<=[.?!])\s+/)
+                .map(sentence => sentence.charAt(0).toUpperCase() + sentence.slice(1))
+                .join(' ');
 
-    if (listening) {
-        recognition.stop();
-        setListening(false);
-    } else {
-        recognition.start();
-        setListening(true);
+            setOpis(prev => (prev ? prev + ' ' + finalTranscript : finalTranscript));
+            resetTranscript();
+        }
+    }, [transcript]);
 
-        recognition.onresult = (event) => {
-            let finalTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
-                }
-            }
+    const toggleListening = () => {
+        if (!browserSupportsSpeechRecognition) {
+            alert('Govorno prepoznavanje nije podržano.');
+            return;
+        }
 
-            if (finalTranscript) {
-                // 1. Zamena izgovorenih interpunkcija
-                finalTranscript = finalTranscript
-                    .replace(/\btačka\b/gi, '.')
-                    .replace(/\bzarez\b/gi, ',')
-                    .replace(/\buzvičnik\b/gi, '!')
-                    .replace(/\bznak pitanja\b/gi, '?');
-
-                // 2. Uklanjanje viška razmaka
-                finalTranscript = finalTranscript
-                    .replace(/\s+/g, ' ')
-                    .replace(/\s([,.!?])/g, '$1')
-                    .trim();
-
-                // 3. Veliko slovo na početku rečenica
-                finalTranscript = finalTranscript
-                    .split(/(?<=[.?!])\s+/)
-                    .map(sentence => sentence.charAt(0).toUpperCase() + sentence.slice(1))
-                    .join(' ');
-
-                // 4. Dodavanje u postojeći opis
-                setOpis(prevOpis => {
-                    const separator = prevOpis ? ' ' : '';
-                    return prevOpis + separator + finalTranscript;
-                });
-            }
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Greška u prepoznavanju govora:', event.error);
-            setListening(false);
-            recognition.stop();
-        };
-
-        recognition.onend = () => {
-            setListening(false);
-        };
-    }
-};
-
+        if (listening) {
+            SpeechRecognition.stopListening();
+        } else {
+            SpeechRecognition.startListening({ continuous: true, language: 'sr-RS' });
+        }
+    };
 
     const formatDatumKontrole = (dateObj) => {
         if (!dateObj || !(dateObj instanceof Date)) return '';
@@ -117,7 +86,13 @@ const toggleListening = () => {
             email,
             opis
         };
-  
+
+        // Pozovi callback ako postoji (npr. slanje podataka)
+        if (onGenerateReport) {
+            await onGenerateReport(patientData);
+        }
+
+        setLoading(false);
     };
 
     return (
@@ -172,10 +147,7 @@ const toggleListening = () => {
                         scrollableYearDropdown
                         yearDropdownItemNumber={100}
                         className="datepicker-input"
-                        style={{ width: '100%', backgroundColor: 'white' }}
                     />
-
-
                 </div>
                 <div className="form-group">
                     <label>Kontrola kod stomatologa</label>
@@ -188,10 +160,7 @@ const toggleListening = () => {
                         scrollableYearDropdown
                         yearDropdownItemNumber={100}
                         className="datepicker-input"
-                        style={{ width: '100%', backgroundColor: 'white' }}
                     />
-
-
                 </div>
             </div>
 
