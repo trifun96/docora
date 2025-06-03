@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/docora/static/css/main.0d02a819.css",
-    "main.js": "/docora/static/js/main.26e2783e.js",
+    "main.js": "/docora/static/js/main.8f787791.js",
     "static/js/453.cf813705.chunk.js": "/docora/static/js/453.cf813705.chunk.js",
     "index.html": "/docora/index.html",
     "main.0d02a819.css.map": "/docora/static/css/main.0d02a819.css.map",
-    "main.26e2783e.js.map": "/docora/static/js/main.26e2783e.js.map",
+    "main.8f787791.js.map": "/docora/static/js/main.8f787791.js.map",
     "453.cf813705.chunk.js.map": "/docora/static/js/453.cf813705.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.0d02a819.css",
-    "static/js/main.26e2783e.js"
+    "static/js/main.8f787791.js"
   ]
 }
