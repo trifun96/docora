@@ -1,0 +1,22 @@
+.landing-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+ background-color: #3a7ca5;
+  box-shadow: 0 2px 8px rgba(85, 176, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 2rem;
+  z-index: 1000;
+  user-select: none;
+}
+
+.landing-header svg {
+  height: 40px;
+  width: auto;
+  pointer-events: none;
+  user-select: none;
+}
